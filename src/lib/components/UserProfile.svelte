@@ -23,8 +23,9 @@
   });
 
   let error = $state('');
-  let savingImage = $state(false);
-  let saved = $state(false);
+let savingImage = $state(false);
+let saving = $state(false);
+let saved = $state(false);
 
   $effect(() => {
     draft = {
@@ -55,8 +56,8 @@
       return;
     }
 
-    if (file.size > 15 * 1024 * 1024) {
-      error = 'Please choose an image under 15 MB.';
+    if (file.size > 30 * 1024 * 1024) {
+      error = 'Please choose an image under 30 MB.';
       return;
     }
 
@@ -93,31 +94,44 @@
     }
   }
 
-  function saveProfile() {
-    error = '';
 
-    const name = draft.displayName.trim();
-    const username = draft.username.trim().replace(/^@/, '');
+async function saveProfile() {
+  error = '';
+  saved = false;
 
-    if (!name) {
-      error = 'Please enter a display name.';
-      return;
-    }
+  const name = draft.displayName.trim();
+  const username = draft.username.trim().replace(/^@/, '').toLowerCase();
 
-    if (!/^[a-zA-Z0-9_]{3,24}$/.test(username)) {
-      error = 'Username must be 3–24 letters, numbers, or underscores.';
-      return;
-    }
+  if (!name) {
+    error = 'Please enter a display name.';
+    return;
+  }
 
-    onSave({
+  if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
+    error = 'Username must be 3–20 letters, numbers, or underscores.';
+    return;
+  }
+
+  if (saving) return;
+
+  saving = true;
+
+  try {
+    await onSave({
       ...draft,
       displayName: name,
-      username: username.toLowerCase(),
+      username,
       bio: draft.bio.trim()
     });
 
     saved = true;
+  } catch (err) {
+    error = err.message || 'Could not save profile.';
+  } finally {
+    saving = false;
   }
+}
+
 </script>
 
 <div class="max-w-4xl mx-auto space-y-8">
@@ -221,7 +235,7 @@
         <input
           id="profile-username"
           class="field"
-          maxlength="24"
+          maxlength="20"
           required
           bind:value={draft.username}
           oninput={() => saved = false}
@@ -275,16 +289,16 @@
     {/if}
 
     {#if saved}
-      <p class="text-sm text-[#9fc9b5]">Profile saved locally.</p>
+      <p class="text-sm text-[#9fc9b5]">Profile saved successfully!</p>
     {/if}
 
     <button
       type="submit"
       class="btn primary flex items-center gap-2"
-      disabled={savingImage}
+      disabled={savingImage || saving}
     >
       <Save size={17} />
-      Save Profile
+      {saving ? 'Saving...' : 'Save Profile'}
     </button>
   </form>
 
@@ -293,10 +307,10 @@
       <ShieldCheck size={20} />
       <h3 class="serif text-xl">Account & Privacy</h3>
     </div>
-    <p class="muted text-sm leading-7">
-      Your profile is currently stored in this browser only.
-      Email, password, account security, and cross-device syncing
-      will become available when Supabase Authentication is connected.
-    </p>
+<p class="muted text-sm leading-7">
+  Your profile information and photo are saved to your Echoes
+  account using Supabase. Your accent color preference is
+  currently saved on this device.
+</p>
   </div>
 </div>
