@@ -1,0 +1,24 @@
+{
+    "name": "echoes-diary",
+    "private": true,
+    "version": "0.1.0",
+    "type": "module",
+    "scripts": {
+  "dev": "vite dev",
+  "build": "vite build",
+  "preview": "vite preview",
+  "prepare": "svelte-kit sync"
+},
+    "dependencies": {
+        "@sveltejs/adapter-auto": "^6.0.0",
+        "@sveltejs/kit": "^2.22.0",
+        "@sveltejs/vite-plugin-svelte": "^6.0.0",
+        "svelte": "^5.0.0",
+        "vite": "^7.0.0",
+        "lucide-svelte": "^0.468.0"
+    },
+    "devDependencies": {
+        "tailwindcss": "^4.0.0",
+        "@tailwindcss/vite": "^4.0.0"
+    }
+}
