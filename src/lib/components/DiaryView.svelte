@@ -16,11 +16,15 @@ import {
   Heart,
   MessageCircle,
   Send,
-  Trash2
+  Trash2,
+  MoreHorizontal
 } from 'lucide-svelte';
 
   let {
-    diary,
+    diary, 
+    memberPreview = '',
+    members = [],
+    currentUserId = null,
     tab = $bindable('shared'),
     onBack = () => {},
     onCustomize = () => {},
@@ -35,6 +39,12 @@ onDeleteComment = () => {},
 onSaveMilestone = () => {},
 onDeleteMilestone = () => {},
   } = $props();
+
+  function getCommentAuthor(comment) {
+  return members.find(
+    (member) => member.user_id === comment.authorId
+  );
+}
 
   let entries = $derived(
     [...(diary?.entries ?? [])]
@@ -62,6 +72,7 @@ onDeleteMilestone = () => {},
 
   let commentDrafts = $state({});
 let expandedComments = $state({});
+let selectedMemberProfile = $state(null);
 
 function submitComment(entryId) {
   const text = (commentDrafts[entryId] ?? '').trim();
@@ -184,18 +195,43 @@ let nextMilestone = $derived(
         {diary.kind} diary
       </p>
 
-      <h1 class="serif text-4xl md:text-5xl mb-3">
-        {diary.name}
-      </h1>
+<h1
+  class="serif text-4xl md:text-5xl mb-3 line-clamp-2 break-words md:max-w-[calc(100%-260px)]"
+>
+  {diary.name}
+</h1>
 
       <p class="text-sm text-[#eee1df] max-w-md">
         {diary.description}
       </p>
 
-      <div class="flex items-center gap-2 mt-5 text-xs">
-        <Users size={15} />
-        {diary.members.join(' · ')}
-      </div>
+<button
+  type="button"
+  onclick={() => (tab = 'members')}
+  class="flex items-center gap-2 mt-5 text-xs text-white/90 hover:text-[#e7a6a6] transition-colors cursor-pointer"
+>
+  <Users size={15} />
+  <div class="flex items-center -space-x-2">
+  {#each members.slice(0, 3) as member (member.user_id)}
+    <div
+      class="w-7 h-7 rounded-full border-2 border-[#241a22] bg-[#49333f] overflow-hidden flex items-center justify-center text-[10px] font-semibold text-white"
+      title={member.display_name || member.username || 'Unknown'}
+    >
+      {#if member.avatar_url}
+        <img
+          src={member.avatar_url}
+          alt={member.display_name || member.username || 'Member'}
+          class="w-full h-full object-cover"
+        />
+      {:else}
+        {(member.display_name || member.username || '?').charAt(0).toUpperCase()}
+      {/if}
+    </div>
+  {/each}
+</div>
+  <span>{memberPreview || 'Loading members...'}</span>
+  <span class="opacity-60">→</span>
+</button>
     
 
     </div>
@@ -256,9 +292,11 @@ let nextMilestone = $derived(
   <DiarySearch {diary} />
 {:else if tab === 'members'}
   <DiaryMembers
+  {members}
     {diary}
     {onAddMember}
     {onRemoveMember}
+    onViewProfile={(member) => (selectedMemberProfile = member)}
   />
 {:else if tab === 'milestones'}
   <DiaryMilestones
@@ -334,37 +372,63 @@ let nextMilestone = $derived(
         <article
           class="panel p-4 sm:p-6 md:p-8 flex-1 min-w-0"
         >
-        <div class="flex flex-wrap justify-between gap-2 text-xs muted">
-          <span>{e.date} · {e.author}</span>
+        <div class="flex items-center gap-3 text-xs muted">
+        {#each members.filter((member) => member.user_id === e.author) as author}
+  <div
+    class="w-6 h-6 rounded-full overflow-hidden bg-[#49333f] flex items-center justify-center text-[10px] font-semibold text-white shrink-0"
+  >
+    {#if author.avatar_url}
+      <img
+        src={author.avatar_url}
+        alt={author.display_name || author.username || 'Author'}
+        class="w-full h-full object-cover"
+      />
+    {:else}
+      {(author.display_name || author.username || '?').charAt(0).toUpperCase()}
+    {/if}
+  </div>
+{/each}
+        
+<div class="flex flex-col gap-0.5">
+  <span class="text-sm font-semibold text-white">
+    {members.find((member) => member.user_id === e.author)?.display_name || members.find((member) => member.user_id === e.author)?.username || e.author}
+  </span>
+  <span class="text-xs text-zinc-400">
+    {e.date}
+  </span>
+</div>
 
-          <span class="flex items-center gap-1">
-            {e.visibility === 'private'
-              ? '🔒 Private'
-              : e.type === 'shared'
-                ? 'Shared memory'
-                : 'Published journal'}
-          </span>
+<div class="ml-auto shrink-0">
+  {#if e.author === currentUserId}
+    <details class="relative">
+      <summary
+        class="list-none cursor-pointer rounded-lg px-2 py-1 text-zinc-400 hover:bg-white/10 hover:text-white"
+        aria-label="Memory options"
+      >
+        <span class="text-xl leading-none">⋯</span>
+      </summary>
+
+      <div class="absolute right-0 top-full z-30 mt-1 w-40 rounded-xl border border-white/10 bg-[#292329] p-1.5 shadow-xl">
+        <button
+          type="button"
+          class="w-full rounded-lg px-3 py-2 text-left text-sm text-white hover:bg-white/10"
+          onclick={() => onEdit(e)}
+        >
+          Edit memory
+        </button>
+        <button
+          type="button"
+          class="w-full rounded-lg px-3 py-2 text-left text-sm text-red-300 hover:bg-white/10"
+          onclick={() => onDelete(e.id)}
+        >
+          Delete memory
+        </button>
+      </div>
+    </details>
+  {/if}
+</div>
         </div>
 
-{#if e.author === 'You'}
-  <div class="flex justify-end gap-3 mt-3">
-    <button
-      type="button"
-      class="text-xs muted hover:text-white flex items-center gap-1"
-      onclick={() => onEdit(e)}
-    >
-      Edit
-    </button>
-
-    <button
-      type="button"
-      class="text-xs text-red-300 hover:text-red-200 flex items-center gap-1"
-      onclick={() => onDelete(e.id)}
-    >
-      Delete
-    </button>
-  </div>
-{/if}
 
         <h3 class="serif text-2xl mt-3 mb-3">
           {e.title}
@@ -415,7 +479,7 @@ let nextMilestone = $derived(
           fill={e.likedByYou ? 'currentColor' : 'none'}
         />
         <span>{e.likedByYou ? 'Loved' : 'Love'}</span>
-        <span class="muted text-xs">{e.likedByYou ? 1 : 0}</span>
+        <span class="muted text-xs">{e.likeCount ?? 0}</span>
       </button>
 
       <button
@@ -432,25 +496,58 @@ let nextMilestone = $derived(
     {#if expandedComments[e.id]}
       <div class="space-y-4">
         {#each e.comments ?? [] as comment (comment.id)}
+        {@const authorProfile = getCommentAuthor(comment)}
           <div class="rounded-xl bg-[#292529] p-4">
             <div class="flex items-center justify-between gap-3">
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="text-sm font-medium">{comment.author}</span>
+<div class="flex flex-wrap items-center gap-2">
+
+
+  <div class="w-8 h-8 rounded-full overflow-hidden bg-[#51434d] flex items-center justify-center shrink-0">
+    {#if authorProfile?.avatar_url}
+      <img
+        src={authorProfile.avatar_url}
+        alt={authorProfile.display_name || authorProfile.username || 'Member'}
+        class="w-full h-full object-cover"
+      />
+    {:else}
+      <span class="text-xs font-semibold text-white">
+        {(authorProfile?.display_name || authorProfile?.username || comment.author || '?').charAt(0).toUpperCase()}
+      </span>
+    {/if}
+  </div>
+
+  <span class="text-sm font-medium">
+    {authorProfile?.display_name || authorProfile?.username || comment.author}
+  </span>
                 <span class="text-xs muted">
                   {new Date(comment.createdAt).toLocaleString()}
                 </span>
               </div>
 
-              {#if comment.author === 'You'}
-                <button
-                  type="button"
-                  class="text-red-300 hover:text-red-200"
-                  aria-label="Delete comment"
-                  onclick={() => onDeleteComment(e.id, comment.id)}
-                >
-                  <Trash2 size={15} />
-                </button>
-              {/if}
+{#if comment.author === 'You'}
+  <div class="relative group/commentmenu">
+    <button
+      type="button"
+      class="text-[#cfc2c6] hover:text-white p-1 rounded-md"
+      aria-label="Comment options"
+    >
+      <MoreHorizontal size={18} />
+    </button>
+
+    <div
+      class="absolute right-0 top-full z-30 hidden group-focus-within/commentmenu:block w-44 rounded-lg border border-white/15 bg-[#242027] shadow-xl p-1"
+    >
+      <button
+        type="button"
+        class="w-full whitespace-nowrap text-left text-xs text-red-300 hover:bg-white/10 rounded-md px-3 py-2 flex items-center gap-2"
+        onclick={() => onDeleteComment(e.id, comment.id)}
+      >
+        <Trash2 size={13} />
+        Delete comment
+      </button>
+    </div>
+  </div>
+{/if}
             </div>
 
             <p class="text-sm leading-6 mt-2 whitespace-pre-wrap">
@@ -530,3 +627,47 @@ let nextMilestone = $derived(
   />
 {/if}
 </div>
+
+{#if selectedMemberProfile}
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
+    <div class="w-full max-w-sm rounded-2xl border border-white/10 bg-[#241c24] p-6 text-center shadow-2xl">
+
+      <button
+        type="button"
+        class="mb-4 block ml-auto text-zinc-400 hover:text-white"
+        onclick={() => (selectedMemberProfile = null)}
+        aria-label="Close profile"
+      >
+        ✕
+      </button>
+
+      <div class="mx-auto mb-4 flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-[#49333f] text-3xl font-semibold text-white">
+        {#if selectedMemberProfile.avatar_url}
+          <img
+            src={selectedMemberProfile.avatar_url}
+            alt="Profile picture"
+            class="h-full w-full object-cover"
+          />
+        {:else}
+          {(selectedMemberProfile.display_name || selectedMemberProfile.username || '?').charAt(0).toUpperCase()}
+        {/if}
+      </div>
+
+      <h2 class="serif text-2xl text-white">
+        {selectedMemberProfile.display_name || selectedMemberProfile.username}
+      </h2>
+
+      <p class="mt-1 text-sm text-zinc-400">
+        @{selectedMemberProfile.username}
+      </p>
+
+      <div class="mt-6 border-t border-white/10 pt-5">
+        <p class="mb-2 text-xs uppercase tracking-widest text-zinc-500">About</p>
+        <p class="whitespace-pre-wrap text-sm text-zinc-300">
+          {selectedMemberProfile.bio || 'No bio added yet.'}
+        </p>
+      </div>
+
+    </div>
+  </div>
+{/if}

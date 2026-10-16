@@ -21,7 +21,7 @@
         `${d.name} ${d.description}`
           .toLowerCase()
           .includes(search.toLowerCase())
-    )
+        ).sort((a, b) => a.name.localeCompare(b.name))
   );
 </script>
 

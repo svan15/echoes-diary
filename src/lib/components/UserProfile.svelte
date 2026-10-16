@@ -6,7 +6,6 @@
     Save,
     ShieldCheck,
     X,
-    Palette
   } from 'lucide-svelte';
 
   let {
@@ -257,31 +256,6 @@ async function saveProfile() {
       <p class="text-xs muted mt-2">
         {draft.bio.length}/300 characters
       </p>
-    </div>
-
-    <div class="space-y-3">
-      <div class="flex items-center gap-2">
-        <Palette size={17} />
-        <h3 class="serif text-xl">Your Accent Color</h3>
-      </div>
-
-      <div class="flex flex-wrap gap-3">
-        {#each themes as theme}
-          <button
-            type="button"
-            class="w-10 h-10 rounded-full border-2 transition-transform hover:scale-110"
-            class:border-white={draft.theme === theme.id}
-            class:border-transparent={draft.theme !== theme.id}
-            style={`background:${theme.color}`}
-            aria-label={theme.name}
-            title={theme.name}
-            onclick={() => {
-              draft.theme = theme.id;
-              saved = false;
-            }}
-          ></button>
-        {/each}
-      </div>
     </div>
 
     {#if error}

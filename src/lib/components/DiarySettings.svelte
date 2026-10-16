@@ -4,12 +4,15 @@
 
   let {
     draft = $bindable(),
+    diary = null,
     editing = null,
+    isOwner = false,
     error = '',
     colors = [],
     onClose = () => {},
     onSave = () => {},
     onDelete = () => {},
+onLeave = () => {},
     onImageUpload = () => {}
   } = $props();
 </script>
@@ -53,6 +56,40 @@
           <option>Personal</option>
           <option>Other</option>
         </select>
+        
+{#if draft.kind === 'Other'}
+  <div class="mt-3">
+    <label for="custom-diary-type">Custom diary type</label>
+    <input
+      id="custom-diary-type"
+      class="field"
+      maxlength="40"
+      placeholder="e.g. Travel, College Friends, Gaming Squad"
+      bind:value={draft.customKind}
+    />
+  </div>
+{/if}
+
+
+<div class="mt-4">
+  <label for="diary-privacy">Diary privacy</label>
+
+  <select
+    id="diary-privacy"
+    class="field"
+    bind:value={draft.privacy}
+  >
+    <option value="personal">Private — only me</option>
+    <option value="shared">Shared — invite participants</option>
+  </select>
+
+  <p class="mt-2 text-xs text-white/50">
+    Shared diaries can have up to 15 participants,
+    including the owner.
+  </p>
+</div>
+
+
       </div>
 
       <div>
@@ -140,7 +177,16 @@
 
       <div class="flex justify-between items-center pt-3">
         <div>
-          {#if editing}
+        {#if diary?.privacy === 'shared'}
+  <button
+    type="button"
+    class="text-amber-300 text-xs flex items-center gap-1 mb-3"
+    onclick={() => onLeave()}
+  >
+    Leave diary
+  </button>
+{/if}
+          {#if editing && isOwner}
             <button
               class="text-red-300 text-xs flex items-center gap-1"
               onclick={onDelete}

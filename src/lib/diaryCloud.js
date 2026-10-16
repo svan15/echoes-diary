@@ -2,6 +2,7 @@
 import { supabase } from '$lib/supabase';
 
 function extensionForType(type) {
+    type = type.split(';')[0].trim().toLowerCase();
   if (type === 'image/webp') return 'webp';
   if (type === 'image/png') return 'png';
   if (type === 'image/jpeg') return 'jpg';

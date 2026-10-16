@@ -12,6 +12,8 @@
 
   let {
     diary,
+    members = [],
+    onViewProfile = () => {},
     onAddMember = () => {},
     onRemoveMember = () => {}
   } = $props();
@@ -20,7 +22,6 @@
   let memberName = $state('');
   let error = $state('');
 
-  let members = $derived(diary?.members ?? []);
 
   function addMember() {
     const name = memberName.trim();
@@ -80,29 +81,43 @@
     </div>
 
     <div class="space-y-3">
-      {#each members as member (member)}
+{#each members as member (member.user_id)}
         <div class="flex items-center justify-between gap-3 rounded-xl border border-[#40383c] p-4">
-          <div class="flex items-center gap-3 min-w-0">
+          <button
+  type="button"
+  class="flex items-center gap-3 min-w-0 text-left cursor-pointer rounded-lg hover:opacity-80 transition-opacity"
+  onclick={() => onViewProfile(member)}
+  aria-label={`View ${member.display_name || member.username || 'member'}'s profile`}
+>
             <div
               class="w-11 h-11 rounded-full flex items-center justify-center text-lg shrink-0"
               style={`background:${diary.accent}30; color:${diary.accent}`}
             >
-              {member.charAt(0).toUpperCase()}
+{#if member.avatar_url}
+  <img
+    src={member.avatar_url}
+    alt={`${member.username}'s profile picture`}
+    class="w-full h-full rounded-full object-cover"
+  />
+{:else}
+  {(member.display_name || member.username || '?').charAt(0).toUpperCase()}
+{/if}
+
             </div>
 
             <div class="min-w-0">
-              <p class="font-medium truncate">{member}</p>
+<p class="font-medium truncate">{member.display_name || member.username || 'Unknown'}</p>
               <p class="text-xs muted mt-1 flex items-center gap-1">
-                {#if member === 'You'}
-                  <Crown size={13} />
-                  Owner (local demo)
-                {:else}
-                  <Users size={13} />
-                  Listed member
-                {/if}
+{#if member.user_id === diary.ownerId}
+  <Crown size={13} />
+  Owner
+{:else}
+  <Users size={13} />
+  Member
+{/if}
               </p>
             </div>
-          </div>
+          </button>
 
           {#if member !== 'You'}
             <button

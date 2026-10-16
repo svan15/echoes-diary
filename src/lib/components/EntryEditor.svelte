@@ -122,11 +122,12 @@ async function startRecording() {
       audio: true
     });
 
-    const types = [
-      'audio/webm;codecs=opus',
-      'audio/webm',
-      'audio/mp4'
-    ];
+const types = [
+  'audio/mp4;codecs=mp4a.40.2',
+  'audio/mp4',
+  'audio/webm;codecs=opus',
+  'audio/webm'
+];
 
     const mimeType = types.find(type => MediaRecorder.isTypeSupported(type));
 
@@ -151,9 +152,29 @@ async function startRecording() {
           type: recorder.mimeType || 'audio/webm'
         });
 
+        console.log('Recording diagnostic:', {
+  mimeType: recorder.mimeType,
+  chunks: audioChunks.length,
+  blobSize: blob.size,
+  blobType: blob.type
+});
+
         if (blob.size > 250000) {
           throw new Error('Recording is too large for temporary browser storage.');
         }
+
+const testUrl = URL.createObjectURL(blob);
+const testAudio = new Audio(testUrl);
+
+testAudio.onloadedmetadata = () => {
+  console.log('Raw recording duration:', testAudio.duration);
+};
+
+testAudio.onerror = () => {
+  console.log('Raw recording error:', testAudio.error?.code);
+};
+
+testAudio.load();
 
         const dataUrl = await new Promise((resolve, reject) => {
           const reader = new FileReader();
@@ -198,9 +219,11 @@ async function startRecording() {
 
 function stopRecording() {
   if (recorder?.state === 'recording') {
+    processingAudio = true;
     recorder.stop();
   }
-  stopMicrophone();
+
+  clearInterval(recordingTimer);
   recording = false;
 }
 
