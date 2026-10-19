@@ -1964,16 +1964,7 @@ async function leaveDiary() {
         />
         {/if}
         <main class="flex-1 min-w-0 p-5 md:p-9 lg:p-12">
-            <div class="flex justify-end mb-5">
-                <button
-                    type="button"
-                    onclick={signOut}
-                    class="flex items-center gap-2 text-xs text-[#bcb4b5] hover:text-white transition-colors"
-                >
-                    <LogOut size={15} />
-                    Sign out
-                </button>
-            </div>
+
             {#if accountSettingsOpen}
     <AccountSettings email={session?.user?.email ?? ""} />
 {:else if appearanceOpen}
@@ -1998,17 +1989,7 @@ if (openedDiary?.privacy === "shared") {
                     }}
                 />
             {:else}
-                {#if current.privacy === "shared" && current.ownerId === session?.user?.id}
-                    <div class="flex justify-end mb-4">
-                        <button
-                            type="button"
-                            onclick={() => promptDiaryInvitation(current)}
-                            class="px-5 py-2.5 rounded-xl bg-[#dca9a6]/15 border border-[#dca9a6]/30 text-[#dca9a6] text-sm font-medium hover:bg-[#dca9a6]/25 transition-all"
-                        >
-                            + Share Diary
-                        </button>
-                    </div>
-                {/if}
+ 
 
 
 
@@ -2019,6 +2000,7 @@ if (openedDiary?.privacy === "shared") {
                     diary={current}
                     bind:tab
                     onBack={() => (selected = null)}
+                    onShareDiary={() => promptDiaryInvitation(current)}
                     onCustomize={openSettings}
                     onWrite={openEntry}
                     onEdit={editEntry}

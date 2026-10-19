@@ -124,11 +124,6 @@
       <div class="flex lg:hidden items-center gap-2 text-sm tracking-[.2em]">
         <BookHeart size={20} class="text-[#dca9a6]" /> ECHOES
       </div>
-      <button
-        type="button"
-        class="text-xs text-[#b9a8b1] hover:text-white underline underline-offset-4"
-        onclick={onPreview}>Preview my diaries</button
-      >
     </div>
     <div class="w-full max-w-[420px] mx-auto my-auto py-12">
       {#if mode === "reset"}
@@ -211,9 +206,10 @@ maxlength="20"
               </p>
             </div>{/if}
           <div>
-            <label for="auth-email">Email address</label>
-            <div class="relative">
-              <Mail size={17} class="auth-input-icon" /><input
+<label for="auth-email">Email address</label>
+<div class="relative">
+  <Mail size={17} class="auth-input-icon" />
+  <input
                 id="auth-email"
                 class="field auth-input"
                 type="email"
@@ -245,11 +241,12 @@ maxlength="20"
                 required
               /><button
                 type="button"
-                class="absolute right-3 top-1/2 -translate-y-1/2 text-[#a99ca5] hover:text-white"
+                class="absolute inset-y-0 right-2 flex w-10 items-center justify-center text-[#a99ca5] hover:text-white"
                 aria-label={showPassword ? "Hide password" : "Show password"}
                 onclick={() => (showPassword = !showPassword)}
-                >{#if showPassword}<EyeOff size={18} />{:else}<Eye
+                >{#if showPassword}<EyeOff size={18} class="block shrink-0" />{:else}<Eye
                     size={18}
+                    class="block shrink-0"
                   />{/if}</button
               >
             </div>
@@ -318,13 +315,16 @@ maxlength="20"
   }
   .auth-input {
     padding-left: 40px;
+    padding-right: 48px;
   }
-  .auth-input-icon {
-    position: absolute;
-    left: 13px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #9b8d97;
-    pointer-events: none;
-  }
+:global(svg.auth-input-icon) {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 17px;
+  height: 17px;
+  color: #9b8d97;
+  pointer-events: none;
+}
 </style>

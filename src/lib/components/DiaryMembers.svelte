@@ -62,14 +62,6 @@
         A space for everyone who belongs to this diary.
       </p>
     </div>
-
-    <button
-      class="btn primary flex items-center gap-2"
-      onclick={() => showAdd = true}
-    >
-      <UserRoundPlus size={17} />
-      Add Member
-    </button>
   </div>
 
   <div class="panel p-5 md:p-7">
@@ -136,69 +128,7 @@
     </div>
   </div>
 
-  <div class="panel p-6 md:p-7 space-y-3">
-    <div class="flex items-center gap-2">
-      <Mail size={19} />
-      <h3 class="serif text-2xl">Invitations</h3>
-    </div>
 
-    <p class="muted text-sm leading-7">
-      Email invitations and pending invitation tracking will become
-      available after Supabase Authentication is connected.
-      For now, adding a name only changes this browser's local member list.
-    </p>
-  </div>
 </div>
 
-{#if showAdd}
-  <div class="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4">
-    <div class="panel w-full max-w-md p-6 md:p-8 space-y-5">
-      <div class="flex justify-between items-center">
-        <h3 class="serif text-2xl">Add a Member</h3>
 
-        <button
-          class="btn"
-          aria-label="Close"
-          onclick={() => {
-            showAdd = false;
-            error = '';
-          }}
-        >
-          <X size={18} />
-        </button>
-      </div>
-
-      <p class="muted text-sm">
-        Add a name to this diary's local member list.
-        This does not invite a real account yet.
-      </p>
-
-      <form
-        class="space-y-4"
-        onsubmit={(event) => {
-          event.preventDefault();
-          addMember();
-        }}
-      >
-        <div class="space-y-2">
-          <label for="member-name" class="text-sm">Member name</label>
-          <input
-            id="member-name"
-            class="field w-full"
-            placeholder="Enter a name"
-            maxlength="60"
-            bind:value={memberName}
-          />
-        </div>
-
-        {#if error}
-          <p class="text-red-300 text-xs">{error}</p>
-        {/if}
-
-        <button type="submit" class="btn primary w-full">
-          Add to Local List
-        </button>
-      </form>
-    </div>
-  </div>
-{/if}

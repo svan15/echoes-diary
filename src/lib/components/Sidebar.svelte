@@ -11,6 +11,8 @@
     Images,
     Search,
     CalendarHeart,
+Menu,
+X,
 UserRound,
 Palette,
   } from "lucide-svelte";
@@ -29,10 +31,34 @@ profileActive = false,
 profileName = '',
 profileAvatar = '',
   } = $props();
+  let mobileMenuOpen = $state(false);
 </script>
 
+<button
+  type="button"
+  class="md:hidden fixed top-4 right-4 z-50 flex h-10 w-10 items-center justify-center rounded-lg border border-[#514449] bg-[#211d22] text-[#e8c8c2] shadow-lg"
+  onclick={() => (mobileMenuOpen = !mobileMenuOpen)}
+  aria-label={mobileMenuOpen ? "Close diary navigation" : "Open diary navigation"}
+  aria-expanded={mobileMenuOpen}
+>
+  {#if mobileMenuOpen}
+    <X size={22} />
+  {:else}
+    <Menu size={22} />
+  {/if}
+</button>
+
+{#if mobileMenuOpen}
+  <button
+    type="button"
+    class="fixed inset-0 z-30 bg-black/60 md:hidden"
+    aria-label="Close diary navigation"
+    onclick={() => (mobileMenuOpen = false)}
+  ></button>
+{/if}
+
 <aside
-  class="md:w-60 md:min-h-screen bg-[#111112] border-b md:border-b-0 md:border-r border-[#302d31] p-5 flex flex-col gap-6 shrink-0"
+  class={`fixed inset-y-0 left-0 z-40 w-64 max-w-[85vw] h-screen overflow-y-auto bg-[#111112] border-r border-[#302d31] p-5 flex flex-col gap-6 shrink-0 transition-transform duration-300 ease-in-out md:static md:w-60 md:min-h-screen md:h-auto md:translate-x-0 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
 >
   <button class="text-left" onclick={onHome}>
     <div class="serif text-2xl tracking-[.32em] text-[#e8c8c2]">ECHOES</div>
@@ -41,15 +67,8 @@ profileAvatar = '',
 
   {#if selected}
     <div class="border-t border-[#302d31] pt-5">
-      <button
-        class="flex items-center gap-2 text-xs muted hover:text-white"
-        onclick={onHome}
-      >
-        <ArrowLeft size={15} />
-        Back to diaries
-      </button>
 
-      <h2 class="serif text-xl mt-5 break-words">
+      <h2 class="serif text-xl break-words">
         {diaryName}
       </h2>
 
@@ -60,7 +79,10 @@ profileAvatar = '',
     </div>
   {/if}
 
-  <nav class="flex md:flex-col gap-2 overflow-x-auto md:overflow-visible">
+<nav
+  class="flex flex-col gap-2"
+  onclick={() => (mobileMenuOpen = false)}
+>
 {#if !selected}
   <button
     class="nav"
@@ -196,5 +218,4 @@ profileAvatar = '',
     </p>
   </div>
 
-  <p class="text-[10px] muted">LOCAL DEMO · NO ACCOUNT SYNC</p>
 </aside>

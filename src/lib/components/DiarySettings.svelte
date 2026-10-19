@@ -115,12 +115,33 @@ onLeave = () => {},
             ></button>
           {/each}
 
-          <input
-            aria-label="Custom theme color"
-            type="color"
-            bind:value={draft.accent}
-            class="w-9 h-9 bg-transparent cursor-pointer"
-          />
+<div class="relative w-9 h-9 rounded-full overflow-hidden border-2 border-white/30 hover:border-white transition-colors">
+  <input
+    aria-label="Custom theme color"
+    type="color"
+    bind:value={draft.accent}
+    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+  />
+  <div
+    class="absolute inset-0 flex items-center justify-center pointer-events-none"
+    style={`background-color: ${draft.accent}`}
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#ffffff"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  </div>
+</div>
         </div>
       </div>
 

@@ -27,6 +27,7 @@ import {
     currentUserId = null,
     tab = $bindable('shared'),
     onBack = () => {},
+onShareDiary = () => {},
     onCustomize = () => {},
     onWrite = () => {},
 onEdit = () => {},
@@ -170,14 +171,25 @@ let nextMilestone = $derived(
 </script>
 
 <div class="max-w-5xl mx-auto">
-  <button
-    class="text-sm muted flex gap-2 items-center mb-6"
+  <div class="flex items-center justify-between gap-3 mb-6 pt-12 md:pt-0">
+    <button
+      class="text-sm muted flex gap-2 items-center"
     onclick={onBack}
   >
     <ArrowLeft size={16} />
     Back to diaries
   </button>
 
+  {#if diary.privacy === 'shared' && diary.ownerId === currentUserId}
+    <button
+      type="button"
+      onclick={onShareDiary}
+      class="shrink-0 px-3 py-2 md:px-5 md:py-2.5 rounded-xl bg-[#dca9a6]/15 border border-[#dca9a6]/30 text-[#dca9a6] text-xs md:text-sm font-medium hover:bg-[#dca9a6]/25 transition-all"
+    >
+      + Share Diary
+    </button>
+  {/if}
+  </div>
   <!-- Diary header -->
   <div
     class="rounded-2xl overflow-hidden border border-[#514449] cover min-h-52 md:min-h-64 relative"
@@ -242,7 +254,7 @@ let nextMilestone = $derived(
 
   <button
     type="button"
-    class="w-full sm:w-auto md:absolute md:top-6 md:right-6 text-left rounded-xl border border-white/15 bg-black/40 backdrop-blur-md px-4 py-3 hover:bg-black/60 transition-colors"
+    class="absolute top-3 right-3 md:top-6 md:right-6 z-10 w-auto max-w-[70%] text-left rounded-xl border border-white/15 bg-black/40 backdrop-blur-md px-3 py-2 md:px-4 md:py-3 hover:bg-black/60 transition-colors"
     onclick={() => (tab = 'milestones')}
     aria-label={`View milestone ${nextMilestone.title}`}
   >
