@@ -45,7 +45,7 @@
 {/if}
 
 <aside
-  class="fixed inset-y-0 left-0 z-40 w-64 h-screen overflow-y-auto bg-[#111112] border-r border-[#302d31] p-5 flex flex-col gap-6 shrink-0 transition-transform duration-300 ease-in-out md:static md:w-60 md:min-h-screen md:h-auto md:translate-x-0"
+  class="fixed inset-y-0 left-0 z-40 w-64 h-screen overflow-y-auto bg-[#111112] border-r border-[#302d31] p-5 flex flex-col gap-6 shrink-0 transition-transform duration-300 ease-in-out md:sticky md:top-0 md:w-60 md:h-screen md:translate-x-0"
   class:-translate-x-full={!mobileMenuOpen}
   class:translate-x-0={mobileMenuOpen}
 >

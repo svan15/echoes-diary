@@ -58,10 +58,12 @@
       />
 
       <input
-        class="field pl-10"
+        class="field w-full !pl-11"
         placeholder="Search diaries..."
         bind:value={search}
       />
+
+
     </div>
 
     {#each ['All', 'Shared', 'Personal'] as f}

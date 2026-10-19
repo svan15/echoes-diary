@@ -56,7 +56,7 @@
         class="absolute left-4 top-1/2 -translate-y-1/2 text-[#a99a9d]"
       />
       <input
-        class="field w-full pl-12"
+        class="field w-full !pl-12"
         type="search"
         placeholder="Search titles, memories, or authors..."
         bind:value={query}
