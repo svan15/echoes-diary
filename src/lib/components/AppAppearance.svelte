@@ -20,7 +20,7 @@
     { name: 'Silver', color: '#a3a7a9' }
   ];
 
-  let selectedColor = $state(accent);
+  let selectedColor = $state('#dca9a6');
   let saved = $state(false);
 
   $effect(() => {

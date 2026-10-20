@@ -1,19 +1,18 @@
-
 <script>
-  import { X, Trash2 } from 'lucide-svelte';
+  import { X, Trash2 } from "lucide-svelte";
 
   let {
     draft = $bindable(),
     diary = null,
     editing = null,
     isOwner = false,
-    error = '',
+    error = "",
     colors = [],
     onClose = () => {},
     onSave = () => {},
     onDelete = () => {},
-onLeave = () => {},
-    onImageUpload = () => {}
+    onLeave = () => {},
+    onImageUpload = () => {},
   } = $props();
 </script>
 
@@ -27,7 +26,7 @@ onLeave = () => {},
   <div class="modal">
     <div class="flex justify-between items-center mb-6">
       <h2 class="serif text-3xl">
-        {editing ? 'Customize Diary' : 'Create a Diary'}
+        {editing ? "Customize Diary" : "Create a Diary"}
       </h2>
 
       <button aria-label="Close" onclick={onClose}>
@@ -41,6 +40,7 @@ onLeave = () => {},
         <input
           id="diary-name"
           class="field"
+          readonly={!!editing && !isOwner}
           maxlength="60"
           placeholder="Our Little Universe"
           bind:value={draft.name}
@@ -49,47 +49,50 @@ onLeave = () => {},
 
       <div>
         <label for="diary-kind">Diary type</label>
-        <select id="diary-kind" class="field" bind:value={draft.kind}>
+        <select
+  id="diary-kind"
+  class="field"
+  bind:value={draft.kind}
+  disabled={!!editing && !isOwner}
+>
           <option>Couple</option>
           <option>Best Friends</option>
           <option>Family</option>
           <option>Personal</option>
           <option>Other</option>
         </select>
-        
-{#if draft.kind === 'Other'}
-  <div class="mt-3">
-    <label for="custom-diary-type">Custom diary type</label>
-    <input
-      id="custom-diary-type"
-      class="field"
-      maxlength="40"
-      placeholder="e.g. Travel, College Friends, Gaming Squad"
-      bind:value={draft.customKind}
-    />
-  </div>
-{/if}
 
+        {#if draft.kind === "Other"}
+          <div class="mt-3">
+            <label for="custom-diary-type">Custom diary type</label>
+            <input
+              id="custom-diary-type"
+              class="field"
+              readonly={!!editing && !isOwner}
+              maxlength="40"
+              placeholder="e.g. Travel, College Friends, Gaming Squad"
+              bind:value={draft.customKind}
+            />
+          </div>
+        {/if}
 
-<div class="mt-4">
-  <label for="diary-privacy">Diary privacy</label>
+        <div class="mt-4">
+          <label for="diary-privacy">Diary privacy</label>
 
-  <select
-    id="diary-privacy"
-    class="field"
-    bind:value={draft.privacy}
-  >
-    <option value="personal">Private — only me</option>
-    <option value="shared">Shared — invite participants</option>
-  </select>
+          <select
+            id="diary-privacy"
+            class="field"
+            bind:value={draft.privacy}
+            disabled={!!editing && !isOwner}
+          >
+            <option value="personal">Private — only me</option>
+            <option value="shared">Shared — invite participants</option>
+          </select>
 
-  <p class="mt-2 text-xs text-white/50">
-    Shared diaries can have up to 15 participants,
-    including the owner.
-  </p>
-</div>
-
-
+          <p class="mt-2 text-xs text-white/50">
+            Shared diaries can have up to 15 participants, including the owner.
+          </p>
+        </div>
       </div>
 
       <div>
@@ -110,38 +113,42 @@ onLeave = () => {},
             <button
               aria-label={`Select ${c}`}
               class="w-8 h-8 rounded-full border-2"
-              style={`background:${c};border-color:${draft.accent === c ? 'white' : 'transparent'}`}
+              style={`background:${c};border-color:${draft.accent === c ? "white" : "transparent"}`}
+              disabled={!!editing && !isOwner}
               onclick={() => (draft.accent = c)}
             ></button>
           {/each}
 
-<div class="relative w-9 h-9 rounded-full overflow-hidden border-2 border-white/30 hover:border-white transition-colors">
-  <input
-    aria-label="Custom theme color"
-    type="color"
-    bind:value={draft.accent}
-    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-  />
-  <div
-    class="absolute inset-0 flex items-center justify-center pointer-events-none"
-    style={`background-color: ${draft.accent}`}
-  >
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="#ffffff"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    >
-      <path d="M12 20h9" />
-      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-    </svg>
-  </div>
-</div>
+          <div
+            class="relative w-9 h-9 rounded-full overflow-hidden border-2 border-white/30 hover:border-white transition-colors"
+          >
+            <input
+              aria-label="Custom theme color"
+              type="color"
+              bind:value={draft.accent}
+              disabled={!!editing && !isOwner}
+              class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+            />
+            <div
+              class="absolute inset-0 flex items-center justify-center pointer-events-none"
+              style={`background-color: ${draft.accent}`}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#ffffff"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+              </svg>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -153,13 +160,14 @@ onLeave = () => {},
             type="file"
             accept="image/*"
             class="field text-xs"
-            onchange={(e) => onImageUpload(e, 'cover')}
+            disabled={!!editing && !isOwner}
+            onchange={(e) => onImageUpload(e, "cover")}
           />
 
           {#if draft.cover}
             <button
               class="text-xs muted mt-2 underline"
-              onclick={() => (draft.cover = '')}
+              onclick={() => (draft.cover = "")}
             >
               Remove cover
             </button>
@@ -173,13 +181,14 @@ onLeave = () => {},
             type="file"
             accept="image/*"
             class="field text-xs"
-            onchange={(e) => onImageUpload(e, 'background')}
+            disabled={!!editing && !isOwner}
+            onchange={(e) => onImageUpload(e, "background")}
           />
 
           {#if draft.background}
             <button
               class="text-xs muted mt-2 underline"
-              onclick={() => (draft.background = '')}
+              onclick={() => (draft.background = "")}
             >
               Remove background
             </button>
@@ -192,21 +201,21 @@ onLeave = () => {},
       {/if}
 
       <p class="text-xs muted">
-        In this demo, customizations are saved only in your browser.
-        Live sharing comes with the backend phase.
+        In this demo, customizations are saved only in your browser. Live
+        sharing comes with the backend phase.
       </p>
 
       <div class="flex justify-between items-center pt-3">
         <div>
-        {#if diary?.privacy === 'shared'}
-  <button
-    type="button"
-    class="text-amber-300 text-xs flex items-center gap-1 mb-3"
-    onclick={() => onLeave()}
-  >
-    Leave diary
-  </button>
-{/if}
+          {#if diary?.privacy === "shared"}
+            <button
+              type="button"
+              class="text-amber-300 text-xs flex items-center gap-1 mb-3"
+              onclick={() => onLeave()}
+            >
+              Leave diary
+            </button>
+          {/if}
           {#if editing && isOwner}
             <button
               class="text-red-300 text-xs flex items-center gap-1"
@@ -220,10 +229,10 @@ onLeave = () => {},
 
         <button
           class="btn primary"
-          disabled={!draft.name.trim()}
+          disabled={!draft.name.trim() || (editing && !isOwner)}
           onclick={onSave}
         >
-          {editing ? 'Save Changes' : 'Create Diary'}
+          {editing ? "Save Changes" : "Create Diary"}
         </button>
       </div>
     </div>

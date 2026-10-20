@@ -3,6 +3,20 @@
   import { onMount } from 'svelte';
   import QRCode from 'qrcode';
 
+  let copyNotice = $state('');
+let copyNoticeTimer;
+
+function showCopyNotice(message) {
+  copyNotice = message;
+
+  clearTimeout(copyNoticeTimer);
+
+  copyNoticeTimer = setTimeout(() => {
+    copyNotice = '';
+  }, 3000);
+}
+
+
   let {
     inviteUrl = '',
     onClose = () => {}
@@ -24,15 +38,25 @@
     }
   });
 
-  async function copyLink() {
-    try {
-      await navigator.clipboard.writeText(inviteUrl);
-      alert('Invitation link copied!');
-    } catch {
-      alert('Could not copy invitation link.');
-    }
+async function copyLink() {
+  try {
+    await navigator.clipboard.writeText(inviteUrl);
+    showCopyNotice('Invitation link copied!');
+  } catch {
+    showCopyNotice('Could not copy invitation link.');
   }
+}
 </script>
+
+{#if copyNotice}
+  <div
+    role="status"
+    aria-live="polite"
+    class="fixed bottom-6 left-1/2 z-[100] w-max max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl border border-[#76565f] bg-[#39252d] px-5 py-3 text-center text-sm text-[#f3dadd] shadow-2xl"
+  >
+    {copyNotice}
+  </div>
+{/if}
 
 <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
   <div class="w-full max-w-sm rounded-3xl border border-white/10 bg-[#18151c] p-6 text-center shadow-2xl">

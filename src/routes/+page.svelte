@@ -1,7 +1,7 @@
 <script>
     import { supabase } from "$lib/supabase";
     import { uploadDiaryMedia, getDiaryMediaUrl } from "$lib/diaryCloud";
-
+import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
     import Sidebar from "$lib/components/Sidebar.svelte";
     import AppSidebar from "$lib/components/AppSidebar.svelte";
     import AccountSettings from "$lib/components/AccountSettings.svelte";
@@ -12,8 +12,7 @@
     import DiarySettings from "$lib/components/DiarySettings.svelte";
     import UserProfile from "$lib/components/UserProfile.svelte";
     import AppAppearance from "$lib/components/AppAppearance.svelte";
-import DiaryShareModal from "$lib/components/DiaryShareModal.svelte";
-
+    import DiaryShareModal from "$lib/components/DiaryShareModal.svelte";
 
     import { onMount } from "svelte";
     import {
@@ -82,24 +81,23 @@ import DiaryShareModal from "$lib/components/DiaryShareModal.svelte";
                 cloudReady = false;
             }
 
+            if (newSession?.user?.id) {
+                const pendingInvite =
+                    sessionStorage.getItem("pendingDiaryInvite");
 
-if (newSession?.user?.id) {
-    const pendingInvite = sessionStorage.getItem("pendingDiaryInvite");
+                if (pendingInvite) {
+                    sessionStorage.removeItem("pendingDiaryInvite");
 
-    if (pendingInvite) {
-        sessionStorage.removeItem("pendingDiaryInvite");
+                    window.location.replace(
+                        `/join?token=${encodeURIComponent(pendingInvite)}`,
+                    );
 
-        window.location.replace(
-            `/join?token=${encodeURIComponent(pendingInvite)}`
-        );
+                    return;
+                }
 
-        return;
-    }
-
-    loadSupabaseProfile(newSession.user.id);
-    loadCloudDiaries(newSession.user.id);
-}
-
+                loadSupabaseProfile(newSession.user.id);
+                loadCloudDiaries(newSession.user.id);
+            }
         });
 
         supabase.auth
@@ -146,82 +144,86 @@ if (newSession?.user?.id) {
         tab = $state("shared"),
         modal = $state(""),
         editing = $state(null);
-        let shareInviteUrl = $state("");
-        
-let joinedDiaryWelcome = $state(false);
-let diaryMembers = $state([]);
-let showDiaryMembers = $state(false);
+        let showLeaveConfirm = $state(false);
+        let showDeleteDiaryConfirm = $state(false);
+        let pendingDeleteEntryId = $state(null);
+    let shareInviteUrl = $state("");
 
-let memberPreview = $derived.by(() => {
-    const ordered = [...diaryMembers].sort(
-        (a, b) =>
-            Number(b.user_id === session?.user?.id) -
-            Number(a.user_id === session?.user?.id)
-    );
+    let joinedDiaryWelcome = $state(false);
+    let diaryMembers = $state([]);
+    let showDiaryMembers = $state(false);
 
-    const names = ordered.slice(0, 3).map((member) =>
-        member.user_id === session?.user?.id
-            ? "You"
-            : member.display_name || member.username || "Unknown"
-    );
+    let memberPreview = $derived.by(() => {
+        const ordered = [...diaryMembers].sort(
+            (a, b) =>
+                Number(b.user_id === session?.user?.id) -
+                Number(a.user_id === session?.user?.id),
+        );
 
-    const remaining = Math.max(ordered.length - 3, 0);
-
-    return remaining
-        ? `${names.join(", ")}, +${remaining} more`
-        : names.join(", ");
-});
-
-async function loadDiaryMembers(diaryId) {
-    diaryMembers = [];
-
-    if (!diaryId) return;
-
-    const { data, error } = await supabase.rpc(
-        "get_diary_participants",
-        { p_diary_id: diaryId }
-    );
-
-    if (error) {
-        console.error("Could not load diary members:", error);
-        return;
-    }
-
-diaryMembers = await Promise.all(
-    (data ?? []).map(async (member) => {
-        if (!member.avatar_url) return member;
-
-        const { data: avatarData, error: avatarError } =
-            await supabase.storage
-                .from("avatars")
-                .createSignedUrl(member.avatar_url, 60 * 60);
-
-        if (avatarError) {
-            console.error(
-                `Could not load avatar for @${member.username}:`,
-                avatarError
+        const names = ordered
+            .slice(0, 3)
+            .map((member) =>
+                member.user_id === session?.user?.id
+                    ? "You"
+                    : member.display_name || member.username || "Unknown",
             );
+
+        const remaining = Math.max(ordered.length - 3, 0);
+
+        return remaining
+            ? `${names.join(", ")}, +${remaining} more`
+            : names.join(", ");
+    });
+
+    async function loadDiaryMembers(diaryId) {
+        diaryMembers = [];
+
+        if (!diaryId) return;
+
+        const { data, error } = await supabase.rpc("get_diary_participants", {
+            p_diary_id: diaryId,
+        });
+
+        if (error) {
+            console.error("Could not load diary members:", error);
+            return;
         }
 
-        return {
-            ...member,
-            avatar_url: avatarData?.signedUrl || null
-        };
-    })
-);
-    console.table(
-    diaryMembers.map(member => ({
-        username: member.username,
-        avatar_url: member.avatar_url,
-        avatar_type: member.avatar_url?.startsWith("http")
-            ? "Full URL"
-            : "Storage path or empty"
-    }))
-);
-    console.table($state.snapshot(diaryMembers));
-}
+        diaryMembers = await Promise.all(
+            (data ?? []).map(async (member) => {
+                if (!member.avatar_url) return member;
 
-let showShareModal = $state(false);
+                const { data: avatarData, error: avatarError } =
+                    await supabase.storage
+                        .from("avatars")
+                        .createSignedUrl(member.avatar_url, 60 * 60);
+
+                if (avatarError) {
+                    console.error(
+                        `Could not load avatar for @${member.username}:`,
+                        avatarError,
+                    );
+                }
+
+                return {
+                    ...member,
+                    avatar_url: avatarData?.signedUrl || null,
+                };
+            }),
+        );
+        console.table(
+            diaryMembers.map((member) => ({
+                username: member.username,
+                avatar_url: member.avatar_url,
+                avatar_type: member.avatar_url?.startsWith("http")
+                    ? "Full URL"
+                    : "Storage path or empty",
+            })),
+        );
+        console.table($state.snapshot(diaryMembers));
+    }
+
+    let showShareModal = $state(false);
     let draft = $state({
         name: "",
         kind: "Couple",
@@ -351,14 +353,14 @@ let showShareModal = $state(false);
                 type: memory.type || "shared",
                 visibility: memory.visibility || "shared",
                 authorId: memory.author_id,
-                
-author: memory.author_id,
+
+                author: memory.author_id,
                 date: memory.entry_date?.slice(0, 10) || "",
                 photos: memory.photos || [],
                 audio: memory.audio || null,
-likedByYou: false,
-likeCount: 0,
-comments: memory.comments || [],
+                likedByYou: false,
+                likeCount: 0,
+                comments: memory.comments || [],
             })),
 
             milestones: milestones.map((milestone) => ({
@@ -389,8 +391,8 @@ comments: memory.comments || [],
 
             const inviteUrl = `${window.location.origin}/join?token=${encodeURIComponent(token)}`;
 
-shareInviteUrl = inviteUrl;
-showShareModal = true;
+            shareInviteUrl = inviteUrl;
+            showShareModal = true;
         } catch (error) {
             console.error("Could not create diary invitation:", error);
             alert(error.message || "Could not create diary invitation.");
@@ -443,48 +445,59 @@ showShareModal = true;
             const formattedDiary = formatCloudDiary(diary, entries, milestones);
             const entryIds = (entries ?? []).map((entry) => entry.id);
 
-if (entryIds.length > 0) {
-    const { data: likes, error: likesError } = await supabase
-        .from("diary_entry_likes")
-        .select("entry_id, user_id")
-        .in("entry_id", entryIds);
+            if (entryIds.length > 0) {
+                const { data: likes, error: likesError } = await supabase
+                    .from("diary_entry_likes")
+                    .select("entry_id, user_id")
+                    .in("entry_id", entryIds);
 
-    if (likesError) {
-        console.error("[Echoes Cloud] Could not load likes:", likesError);
-    } else {
-        formattedDiary.entries = formattedDiary.entries.map((entry) => {
-            const entryLikes = (likes ?? []).filter(
-                (like) => like.entry_id === entry.cloudId
-            );
+                if (likesError) {
+                    console.error(
+                        "[Echoes Cloud] Could not load likes:",
+                        likesError,
+                    );
+                } else {
+                    formattedDiary.entries = formattedDiary.entries.map(
+                        (entry) => {
+                            const entryLikes = (likes ?? []).filter(
+                                (like) => like.entry_id === entry.cloudId,
+                            );
 
-            return {
-                ...entry,
-                likedByYou: entryLikes.some(
-                    (like) => like.user_id === userId
-                ),
-                likeCount: entryLikes.length,
-            };
-        });
-    }
-}
+                            return {
+                                ...entry,
+                                likedByYou: entryLikes.some(
+                                    (like) => like.user_id === userId,
+                                ),
+                                likeCount: entryLikes.length,
+                            };
+                        },
+                    );
+                }
+            }
             if (diary.kind === "shared") {
-    const { data: participants, error: participantsError } =
-        await supabase.rpc("get_diary_participants", {
-            p_diary_id: diary.id
-        });
+                const { data: participants, error: participantsError } =
+                    await supabase.rpc("get_diary_participants", {
+                        p_diary_id: diary.id,
+                    });
 
-    if (participantsError) {
-        console.error("Could not load dashboard members:", participantsError);
-    } else {
-        formattedDiary.members = (participants ?? []).map((member) =>
-            member.user_id === userId
-                ? "You"
-                : member.display_name || member.username || "Unknown"
-        );
-    }
-} else {
-    formattedDiary.members = ["You"];
-}
+                if (participantsError) {
+                    console.error(
+                        "Could not load dashboard members:",
+                        participantsError,
+                    );
+                } else {
+                    formattedDiary.members = (participants ?? []).map(
+                        (member) =>
+                            member.user_id === userId
+                                ? "You"
+                                : member.display_name ||
+                                  member.username ||
+                                  "Unknown",
+                    );
+                }
+            } else {
+                formattedDiary.members = ["You"];
+            }
 
             const diaryWithMedia = await resolveCloudMedia(formattedDiary);
 
@@ -494,29 +507,26 @@ if (entryIds.length > 0) {
         if (loadVersion !== cloudLoadVersion || session?.user?.id !== userId)
             return;
 
-diaries = formattedDiaries;
+        diaries = formattedDiaries;
 
-const joinedDiaryId = sessionStorage.getItem("joinedDiaryId");
+        const joinedDiaryId = sessionStorage.getItem("joinedDiaryId");
 
-if (joinedDiaryId) {
-    const joinedDiary = formattedDiaries.find(
-        (diary) => diary.cloudId === joinedDiaryId
-    );
+        if (joinedDiaryId) {
+            const joinedDiary = formattedDiaries.find(
+                (diary) => diary.cloudId === joinedDiaryId,
+            );
 
-    selected = joinedDiary?.id ?? null;
+            selected = joinedDiary?.id ?? null;
 
+            if (joinedDiary) {
+                sessionStorage.removeItem("joinedDiaryId");
+                joinedDiaryWelcome = true;
+            }
+        } else {
+            selected = null;
+        }
 
-if (joinedDiary) {
-    sessionStorage.removeItem("joinedDiaryId");
-    joinedDiaryWelcome = true;
-}
-
-} else {
-    selected = null;
-}
-
-cloudReady = true;
-
+        cloudReady = true;
 
         console.log(
             "[Echoes Cloud] Loaded diaries into interface:",
@@ -776,17 +786,17 @@ cloudReady = true;
                     cover: draft.cover || null,
                     background: draft.background || null,
                 })
-                .eq("id", cloudId)
-                .eq("owner_id", userId)
-                .select("id")
-                .single();
-
-            if (updateError) {
+.eq("id", cloudId)
+.eq("owner_id", userId)
+.select("id")
+.maybeSingle();
+if (updateError || !updated) {
                 console.error(
                     "[Echoes Cloud] Diary update failed:",
                     updateError,
                 );
-                error = "Could not update diary: " + updateError.message;
+                error = "Could not update diary: " +
+    (updateError?.message || "No diary was updated. Check diary ownership or database permissions.");
                 return;
             }
 
@@ -902,9 +912,7 @@ cloudReady = true;
             return;
         }
 
-        if (!confirm(`Permanently delete "${existingEntry.title}"?`)) {
-            return;
-        }
+
 
         try {
             let cloudDiaryId = diary.cloudId;
@@ -1261,28 +1269,28 @@ cloudReady = true;
                 cloudEntryId = data.id;
             }
 
-let reactionError;
+            let reactionError;
 
-if (newLikedState) {
-    const { error } = await supabase
-        .from("diary_entry_likes")
-        .insert({
-            entry_id: cloudEntryId,
-            user_id: userId,
-        });
+            if (newLikedState) {
+                const { error } = await supabase
+                    .from("diary_entry_likes")
+                    .insert({
+                        entry_id: cloudEntryId,
+                        user_id: userId,
+                    });
 
-    reactionError = error;
-} else {
-    const { error } = await supabase
-        .from("diary_entry_likes")
-        .delete()
-        .eq("entry_id", cloudEntryId)
-        .eq("user_id", userId);
+                reactionError = error;
+            } else {
+                const { error } = await supabase
+                    .from("diary_entry_likes")
+                    .delete()
+                    .eq("entry_id", cloudEntryId)
+                    .eq("user_id", userId);
 
-    reactionError = error;
-}
+                reactionError = error;
+            }
 
-if (reactionError) throw reactionError;
+            if (reactionError) throw reactionError;
 
             if (session?.user?.id !== userId) return;
 
@@ -1295,10 +1303,11 @@ if (reactionError) throw reactionError;
                                   ? {
                                         ...e,
                                         likedByYou: newLikedState,
-likeCount: Math.max(
-    0,
-    (e.likeCount ?? 0) + (newLikedState ? 1 : -1)
-),
+                                        likeCount: Math.max(
+                                            0,
+                                            (e.likeCount ?? 0) +
+                                                (newLikedState ? 1 : -1),
+                                        ),
                                     }
                                   : e,
                           ),
@@ -1364,23 +1373,23 @@ likeCount: Math.max(
                 cloudEntryId = data.id;
             }
 
-const { error } = await supabase.rpc("add_diary_comment", {
-    p_entry_id: cloudEntryId,
-    p_comment: comment,
-});
+            const { error } = await supabase.rpc("add_diary_comment", {
+                p_entry_id: cloudEntryId,
+                p_comment: comment,
+            });
 
-if (error) throw error;
+            if (error) throw error;
 
-const { data: latest, error: fetchError } = await supabase
-    .from("diary_entries")
-    .select("comments")
-    .eq("id", cloudEntryId)
-    .eq("diary_id", cloudDiaryId)
-    .single();
+            const { data: latest, error: fetchError } = await supabase
+                .from("diary_entries")
+                .select("comments")
+                .eq("id", cloudEntryId)
+                .eq("diary_id", cloudDiaryId)
+                .single();
 
-if (fetchError) throw fetchError;
+            if (fetchError) throw fetchError;
 
-const updatedComments = latest.comments ?? [];
+            const updatedComments = latest.comments ?? [];
 
             if (session?.user?.id !== userId) return;
 
@@ -1517,10 +1526,12 @@ const updatedComments = latest.comments ?? [];
                 ? (diary.milestones ?? []).find((m) => m.id === milestone.id)
                 : null;
 
-                if (!original && (diary.milestones ?? []).length >= 1) {
-    alert("This diary already has a milestone. You can edit the existing milestone instead.");
-    return;
-}
+            if (!original && (diary.milestones ?? []).length >= 1) {
+                alert(
+                    "This diary already has a milestone. You can edit the existing milestone instead.",
+                );
+                return;
+            }
 
             const savedId = milestone.id ?? newId();
 
@@ -1700,38 +1711,31 @@ const updatedComments = latest.comments ?? [];
         );
     }
 
-async function leaveDiary() {
-    const diary = diaries.find((d) => d.id === editing);
+    async function leaveDiary() {
+        const diary = diaries.find((d) => d.id === editing);
 
-    if (!diary?.cloudId || diary.privacy !== "shared") {
-        alert("Only shared diaries can be left.");
-        return;
+        if (!diary?.cloudId || diary.privacy !== "shared") {
+            alert("Only shared diaries can be left.");
+            return;
+        }
+
+
+
+        const { error: leaveError } = await supabase.rpc("leave_shared_diary", {
+            p_diary_id: diary.cloudId,
+        });
+
+        if (leaveError) {
+            alert(leaveError.message);
+            return;
+        }
+
+        diaries = diaries.filter((d) => d.id !== diary.id);
+        selected = null;
+        editing = null;
+        modal = "";
+        diaryMembers = [];
     }
-
-    const confirmed = confirm(
-        "Are you sure you want to leave this diary? " +
-        "If you're the owner, ownership will transfer to a random member. " +
-        "You will lose access to this diary."
-    );
-
-    if (!confirmed) return;
-
-    const { error: leaveError } = await supabase.rpc(
-        "leave_shared_diary",
-        { p_diary_id: diary.cloudId }
-    );
-
-    if (leaveError) {
-        alert(leaveError.message);
-        return;
-    }
-
-    diaries = diaries.filter((d) => d.id !== diary.id);
-    selected = null;
-    editing = null;
-    modal = "";
-    diaryMembers = [];
-}
 
     async function removeDiary() {
         const userId = session?.user?.id;
@@ -1742,13 +1746,7 @@ async function leaveDiary() {
             return;
         }
 
-        if (
-            !confirm(
-                `Permanently delete "${diary.name}" and all its memories? ` +
-                    "This will delete its database records and cannot be undone.",
-            )
-        )
-            return;
+
 
         try {
             let cloudId = diary.cloudId;
@@ -1866,20 +1864,25 @@ async function leaveDiary() {
 </script>
 
 {#if showShareModal && shareInviteUrl}
-  <DiaryShareModal
-    inviteUrl={shareInviteUrl}
-    onClose={() => {
-      showShareModal = false;
-      shareInviteUrl = "";
-    }}
-  />
+    <DiaryShareModal
+        inviteUrl={shareInviteUrl}
+        onClose={() => {
+            showShareModal = false;
+            shareInviteUrl = "";
+        }}
+    />
 {/if}
 
-
 {#if joinedDiaryWelcome}
-    <div class="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4">
-        <div class="w-full max-w-sm rounded-3xl border border-white/10 bg-[#18151c] p-7 text-center shadow-2xl">
-            <div class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#dca9a6]/10">
+    <div
+        class="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4"
+    >
+        <div
+            class="w-full max-w-sm rounded-3xl border border-white/10 bg-[#18151c] p-7 text-center shadow-2xl"
+        >
+            <div
+                class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#dca9a6]/10"
+            >
                 <span class="text-3xl">♡</span>
             </div>
 
@@ -1888,8 +1891,8 @@ async function leaveDiary() {
             </h2>
 
             <p class="mb-6 text-sm leading-relaxed text-white/60">
-                You've successfully joined this diary.
-                Your memories together start here.
+                You've successfully joined this diary. Your memories together
+                start here.
             </p>
 
             <button
@@ -1902,7 +1905,6 @@ async function leaveDiary() {
         </div>
     </div>
 {/if}
-
 
 <svelte:head
     ><title>Echoes — A Library of Us</title><meta
@@ -1922,53 +1924,55 @@ async function leaveDiary() {
         class="min-h-screen md:flex"
         style={`--accent:${current && !profileOpen && !appearanceOpen ? current.accent : appAccent}`}
     >
-
-{#if !selected}
-    <AppSidebar
-        activePage={accountSettingsOpen ? "settings" : appearanceOpen ? "appearance" : profileOpen ? "profile" : "diaries"}
-        onNavigate={(page) => {
-            selected = null;
-            profileOpen = page === "profile";
-            appearanceOpen = page === "appearance";
-            accountSettingsOpen = page === "settings";
-        }}
-        onSignOut={signOut}
-    />
-{:else}
-
-        <Sidebar
-            {selected}
-            bind:tab
-            diaryName={current?.name ?? ""}
-            entryCount={current?.entries?.length ?? 0}
-            onHome={() => {
-                selected = null;
-                profileOpen = false;
-                appearanceOpen = false;
-            }}
-            onCustomize={() => {
-                profileOpen = false;
-                openSettings();
-            }}
-            onProfile={() => {
-                profileOpen = true;
-                appearanceOpen = false;
-            }}
-            onAppearance={() => {
-                selected = null;
-                profileOpen = false;
-                appearanceOpen = true;
-            }}
-            appearanceActive={appearanceOpen}
-        
-        />
+        {#if !selected}
+            <AppSidebar
+                activePage={accountSettingsOpen
+                    ? "settings"
+                    : appearanceOpen
+                      ? "appearance"
+                      : profileOpen
+                        ? "profile"
+                        : "diaries"}
+                onNavigate={(page) => {
+                    selected = null;
+                    profileOpen = page === "profile";
+                    appearanceOpen = page === "appearance";
+                    accountSettingsOpen = page === "settings";
+                }}
+                onSignOut={signOut}
+            />
+        {:else}
+            <Sidebar
+                {selected}
+                bind:tab
+                diaryName={current?.name ?? ""}
+                entryCount={current?.entries?.length ?? 0}
+                onHome={() => {
+                    selected = null;
+                    profileOpen = false;
+                    appearanceOpen = false;
+                }}
+                onCustomize={() => {
+                    profileOpen = false;
+                    openSettings();
+                }}
+                onProfile={() => {
+                    profileOpen = true;
+                    appearanceOpen = false;
+                }}
+                onAppearance={() => {
+                    selected = null;
+                    profileOpen = false;
+                    appearanceOpen = true;
+                }}
+                appearanceActive={appearanceOpen}
+            />
         {/if}
         <main class="flex-1 min-w-0 p-5 md:p-9 lg:p-12">
-
             {#if accountSettingsOpen}
-    <AccountSettings email={session?.user?.email ?? ""} />
-{:else if appearanceOpen}
-    <AppAppearance accent={appAccent} onSave={saveAppAppearance} />
+                <AccountSettings email={session?.user?.email ?? ""} />
+            {:else if appearanceOpen}
+                <AppAppearance accent={appAccent} onSave={saveAppAppearance} />
             {:else if profileOpen}
                 <UserProfile {profile} onSave={saveProfile} />
             {:else if !current}
@@ -1977,26 +1981,24 @@ async function leaveDiary() {
                     onCreate={openCreate}
                     onOpen={(id) => {
                         selected = id;
-                        const openedDiary = diaries.find((diary) => diary.id === id);
-if (openedDiary?.privacy === "shared") {
-    loadDiaryMembers(openedDiary.cloudId);
-} else {
-    diaryMembers = [];
-}
+                        const openedDiary = diaries.find(
+                            (diary) => diary.id === id,
+                        );
+                        if (openedDiary?.privacy === "shared") {
+                            loadDiaryMembers(openedDiary.cloudId);
+                        } else {
+                            diaryMembers = [];
+                        }
                         appearanceOpen = false;
                         tab = "shared";
                         profileOpen = false;
                     }}
                 />
             {:else}
- 
-
-
-
                 <DiaryView
-                memberPreview={memberPreview}
-                members={diaryMembers}
-                currentUserId={session?.user?.id}
+                    {memberPreview}
+                    members={diaryMembers}
+                    currentUserId={session?.user?.id}
                     diary={current}
                     bind:tab
                     onBack={() => (selected = null)}
@@ -2004,7 +2006,7 @@ if (openedDiary?.privacy === "shared") {
                     onCustomize={openSettings}
                     onWrite={openEntry}
                     onEdit={editEntry}
-                    onDelete={deleteEntry}
+                    onDelete={(entryId) => (pendingDeleteEntryId = entryId)}
                     onAddMember={addMember}
                     onRemoveMember={removeMember}
                     onToggleReaction={toggleReaction}
@@ -2022,13 +2024,14 @@ if (openedDiary?.privacy === "shared") {
             bind:draft
             diary={diaries.find((d) => d.id === editing)}
             {editing}
-            isOwner={diaries.find((d) => d.id === editing)?.ownerId === session?.user?.id}
+            isOwner={diaries.find((d) => d.id === editing)?.ownerId ===
+                session?.user?.id}
             {error}
             {colors}
             onClose={() => (modal = "")}
             onSave={saveDiary}
-            onDelete={removeDiary}
-            onLeave={leaveDiary}
+            onDelete={() => (showDeleteDiaryConfirm = true)}
+            onLeave={() => (showLeaveConfirm = true)}
             onImageUpload={fileToData}
         />
     {/if}
@@ -2048,3 +2051,44 @@ if (openedDiary?.privacy === "shared") {
             <Check size={18} /> Entry saved
         </div>{/if}
 {/if}
+<ConfirmDialog
+  open={showLeaveConfirm}
+  title="Leave diary?"
+  message="Are you sure you want to leave this diary? You will lose access to its memories."
+  warning="If you're the owner, ownership will transfer to a randomly selected remaining member."
+  confirmText="Leave diary"
+  onCancel={() => (showLeaveConfirm = false)}
+  onConfirm={() => {
+    showLeaveConfirm = false;
+    leaveDiary();
+  }}
+/>
+
+
+<ConfirmDialog
+  open={showDeleteDiaryConfirm}
+  title="Delete diary?"
+  message="Are you sure you want to permanently delete this diary and all its memories?"
+  warning="This will permanently delete the diary, its memories, and milestones. This action cannot be undone."
+  confirmText="Delete diary"
+  onCancel={() => (showDeleteDiaryConfirm = false)}
+  onConfirm={() => {
+    showDeleteDiaryConfirm = false;
+    removeDiary();
+  }}
+/>
+
+
+<ConfirmDialog
+  open={pendingDeleteEntryId !== null}
+  title="Delete memory?"
+  message="Are you sure you want to permanently delete this memory?"
+  warning="This memory will be permanently deleted and cannot be recovered."
+  confirmText="Delete memory"
+  onCancel={() => (pendingDeleteEntryId = null)}
+  onConfirm={() => {
+    const entryId = pendingDeleteEntryId;
+    pendingDeleteEntryId = null;
+    if (entryId !== null) deleteEntry(entryId);
+  }}
+/>

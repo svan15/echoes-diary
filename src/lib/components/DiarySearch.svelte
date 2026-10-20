@@ -53,7 +53,7 @@
     <div class="relative">
       <Search
         size={19}
-        class="absolute left-4 top-1/2 -translate-y-1/2 text-[#a99a9d]"
+        class="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#a99a9d]"
       />
       <input
         class="field w-full !pl-12"

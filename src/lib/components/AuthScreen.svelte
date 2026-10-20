@@ -69,9 +69,17 @@
           password,
         });
 
-        if (error) throw error;
+if (error) {
+  if (error.message.toLowerCase().includes("invalid login credentials")) {
+    throw new Error(
+      "Incorrect email or password. If you don't have an account yet, please create one."
+    );
+  }
 
-        notice = "Signed in successfully!";
+  throw error;
+}
+
+notice = "Signed in successfully!";
       } else if (mode === "reset") {
         const { error } = await supabase.auth.resetPasswordForEmail(
           email.trim(),
@@ -99,7 +107,11 @@
     class="hidden lg:flex relative overflow-hidden flex-col justify-between p-12 xl:p-16 border-r border-white/10 bg-[radial-gradient(ellipse_at_20%_30%,#3a2035_0%,#1d151d_44%,#111114_85%)]"
   >
     <div class="flex items-center gap-3">
-      <BookHeart size={22} class="text-[#dca9a6]" /><span
+      <img
+  src="/echoes-logo.svg"
+  alt=""
+  class="w-10 h-10 object-contain shrink-0"
+/><span
         class="tracking-[.25em] text-xs font-semibold">ECHOES</span
       >
     </div>
@@ -119,13 +131,17 @@
       <Heart size={14} /> Every story has a home.
     </div>
   </section>
-  <section class="flex flex-col min-h-screen px-6 py-8 sm:px-12 lg:px-16">
+  <section class="flex flex-col min-h-screen px-6 py-4 sm:px-12 sm:py-8 lg:px-16">
     <div class="flex items-center justify-between lg:justify-end">
       <div class="flex lg:hidden items-center gap-2 text-sm tracking-[.2em]">
-        <BookHeart size={20} class="text-[#dca9a6]" /> ECHOES
+        <img
+  src="/echoes-logo.svg"
+  alt=""
+  class="w-10 h-10 object-contain shrink-0"
+/> ECHOES
       </div>
     </div>
-    <div class="w-full max-w-[420px] mx-auto my-auto py-12">
+    <div class="w-full max-w-[420px] mx-auto my-auto py-4 sm:py-12">
       {#if mode === "reset"}
         <button
           type="button"
@@ -251,9 +267,19 @@ maxlength="20"
               >
             </div>
           </div>
-          <button class="btn primary w-full py-3 mt-2" type="submit"
-            >{isRegister ? "Create account" : "Sign in"}</button
-          >
+<button class="btn primary w-full py-3 mt-2" type="submit">
+  {isRegister ? "Create account" : "Sign in"}
+</button>
+
+{#if notice}
+  <div
+    role="status"
+    aria-live="polite"
+    class="rounded-lg border border-[#76565f] bg-[#39252d] px-4 py-3 text-sm text-[#f3dadd] leading-6"
+  >
+    {notice}
+  </div>
+{/if}
         </form>
         <div class="flex items-center gap-4 my-7">
           <div class="h-px bg-white/10 flex-1"></div>
@@ -283,12 +309,7 @@ maxlength="20"
           >Continue with Google</button
         >
       {/if}
-      {#if notice}<div
-          role="status"
-          class="mt-6 rounded-lg border border-[#76565f] bg-[#39252d] px-4 py-3 text-sm text-[#f3dadd] leading-6"
-        >
-          {notice}
-        </div>{/if}
+
       <p class="text-xs text-center text-[#8f848d] mt-8">
         A private space for every chapter of your story.
       </p>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none">
+  <title>Echoes Diary — Together</title>
+  <rect width="256" height="256" fill="#241820"/>
+  <g stroke="#DCA9A6" stroke-width="5" fill="none">
+    <circle cx="105" cy="128" r="67"/>
+    <circle cx="151" cy="128" r="67"/>
+  </g>
+  <path d="M128 108 C130.8 119.2 136.8 125.2 148 128 C136.8 130.8 130.8 136.8 128 148 C125.2 136.8 119.2 130.8 108 128 C119.2 125.2 125.2 119.2 128 108 Z" fill="#DCA9A6"/>
+</svg>
